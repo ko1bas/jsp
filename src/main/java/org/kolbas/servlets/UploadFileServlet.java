@@ -6,7 +6,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
@@ -20,10 +19,9 @@ import org.kolbas.storage.MapStorage;
 import org.kolbas.storage.ResponseSaver;
 import org.kolbas.servlets.PublicCollectionSingleton;
 
-
 /**
- * Servlet implementation class UploadFileServlet
- * Локализацию не делал. Но сделал бы через синглтон.
+ * Servlet implementation class UploadFileServlet Локализацию не делал. Но
+ * сделал бы через синглтон.
  */
 
 @MultipartConfig
@@ -33,27 +31,27 @@ public class UploadFileServlet extends HttpServlet {
 	private final String ERROR_FILE = "ERROR";
 	private final String ERROR_STRING = "ERROR";
 	private final String ERROR_DIR = "ERROR";
-	
+
 	/**
-	 *  Создает директорию для загрузки файлов.
+	 * Создает директорию для загрузки файлов.
 	 */
 	private String createUploadDir(String path, String dirName) {
 		path = path + "\\" + dirName;
 		File dir = new File(path);
 		dir.mkdirs();
-		return path;	
+		return path;
 	}
 
 	/**
-	 *  Насколько я понял, если папка у нас общая - нужно обеспечить уникальность имен файлов,
-	 *	загруженными разными пользователями. Пока заглушка.
+	 * Насколько я понял, если папка у нас общая - нужно обеспечить уникальность
+	 * имен файлов, загруженными разными пользователями.
 	 */
 	private String getFileName(Part part) {
-		return part.getSubmittedFileName();
+		return java.util.UUID.randomUUID().toString();
 	}
 
 	/**
-	 *  Сохраняет файл из post-запроса в директорию dirName.
+	 * Сохраняет файл из post-запроса в директорию dirName.
 	 */
 	private String saveToDir(Part part, String dirName) {
 		String fname = ERROR_FILE;
@@ -61,7 +59,7 @@ public class UploadFileServlet extends HttpServlet {
 		FileSaver saver = null;
 		try {
 			loader = new FileLoader(part.getInputStream());
-			fname = dirName + "\\" +getFileName(part);
+			fname = dirName + "\\" + getFileName(part);
 
 			saver = new FileSaver(fname);
 
@@ -70,7 +68,7 @@ public class UploadFileServlet extends HttpServlet {
 				if (str == null)
 					break;
 				saver.write(str);
-				
+
 			}
 			saver.close();
 			loader.close();
@@ -81,7 +79,19 @@ public class UploadFileServlet extends HttpServlet {
 	}
 
 	/**
-	 *  Получает String-параметр из post-запроса. 
+	 * Удаляет файлы, пути которых указаны в массиве.
+	 */
+	private void deleteFiles(String[] files) {
+		for(String fileName: files)
+		{
+			File f = new File(fileName);
+			if (f.exists())
+				f.delete();
+		}
+	}
+
+	/**
+	 * Получает String-параметр из post-запроса.
 	 */
 	private String saveToString(Part part) {
 		FileLoader loader;
@@ -102,7 +112,6 @@ public class UploadFileServlet extends HttpServlet {
 		return buf;
 	}
 
-	
 	protected void doPost(HttpServletRequest request,
 			HttpServletResponse response) {
 
@@ -118,8 +127,9 @@ public class UploadFileServlet extends HttpServlet {
 			e.printStackTrace();
 			return;
 		}
-        //не понял как с помощью web-xml создать директорию для загрузки файлов.
-		//создал вручную
+		// не понял как с помощью web-xml создать директорию для загрузки
+		// файлов.
+		// создал вручную
 		String uploadDirPath = createUploadDir(
 				getServletContext().getRealPath(""), "upload");
 
@@ -157,7 +167,8 @@ public class UploadFileServlet extends HttpServlet {
 								+ part.getName() + "'.");
 						return;
 					} else {
-						plugin = PublicCollectionSingleton.getInstance().getPlugin(listValue);
+						plugin = PublicCollectionSingleton.getInstance()
+								.getPlugin(listValue);
 					}
 				}
 			}
@@ -184,5 +195,7 @@ public class UploadFileServlet extends HttpServlet {
 		ResponseSaver saver = new ResponseSaver(masStream, out,
 				new MapStorage(), plugin);
 		saver.saveToResponse(out);
+		
+		deleteFiles(masStream);
 	}
 }
